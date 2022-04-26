@@ -1,8 +1,10 @@
-# Dolby.io Communications Web SDK - Getting Started
+# Dolby.io Communications Web SDK
 
 This starter project demonstrates the mechanics of making a Voice and Video Call with Dolby.io.
 
-Follow the [Getting Started](https://docs.dolby.io/communications-apis/docs/getting-started-with-the-javascript-sdk) tutorial to learn how it works. 
+## Getting Started
+
+Follow the [Getting Started](https://docs.dolby.io/communications-apis/docs/getting-started-with-the-javascript-sdk) tutorial to learn how this application works.
 
 ## Running
 
