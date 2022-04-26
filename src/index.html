@@ -1,54 +1,281 @@
 <!DOCTYPE html>
-<html>
-<head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title>Basic Web Video Conference Application</title>
-    <script type="text/javascript" src="https://unpkg.com/@voxeet/voxeet-web-sdk"></script>
-    <script type="text/javascript" src="scripts/ui.js"></script>
-</head>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
 
+        <title>Dolby.io Getting Started with Video Calls</title>
+        <link rel="shortcut icon" href="https://go.dolby.io/hubfs/Dolby_April2021/images/favicon-32x32.png">
+
+        <!-- Bootstrap Bundle -->
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+
+        <!-- Dolby.io Web SDK -->
+        <script type="text/javascript" src="https://unpkg.com/@voxeet/voxeet-web-sdk"></script>
+        <script type="text/javascript" src="./util/dolbyio-auth-helper.js"></script>
+    </head>
 <body>
-    <div id="app">
-        <h1 id="name-message">Logging in...</h1>
 
-        <!-- Join or Leave a Conference -->
-        <div id="form">
-            <label>Conference alias :</label>
-            <input id="alias-input" value="Avengers meeting" />
-            <button id="join-btn" disabled>Join</button>
-            <button id="leave-btn" disabled>Leave</button>
-            <label id="label-dolby-voice"></label>
-        </div>
-        
-        <!-- Actions on Video and Screen Share -->
-        <div id="actions">
-            <button id="start-video-btn" disabled>Start video</button>
-            <button id="stop-video-btn" disabled>Stop video</button>
-            <button id="start-audio-btn" disabled>Start audio</button>
-            <button id="stop-audio-btn" disabled>Stop audio</button>
-            <button id="start-screenshare-btn" disabled>Start screen share</button>
-            <button id="stop-screenshare-btn" disabled>Stop screen share</button>
-        </div>
-
-        <!-- Recording Actions and Status -->
-        <div id="recording">
-            <button id="start-recording-btn" disabled>Start recording</button>
-            <button id="stop-recording-btn" disabled>Stop recording</button>
-            <p id="record-status" style="color: red;"></p>
-        </div>
-
-        <!-- Display the list of participants -->
-        <div id="participants">
-            <h3>Participants</h3>
-            <ul id="participants-list"></ul>
-        </div>
-
-        <!-- Container for the video streams -->
-        <div id="video-container"></div>
-
-        <!-- Container for the Screen Share -->
-        <div id="screenshare-container"></div>
+    <div class="container bg-dark text-white gx-4 px-4 py-4 mt-3 rounded">
+        <img src="https://go.dolby.io/hubfs/raw_assets/public/Dolby_April2021/images/dolby-io-logo.svg"/>
+        <h1>Getting Started with Video Calls</h1>
     </div>
-    <script type="text/javascript" src="scripts/client.js"></script>
+
+    <div class="container px-4 mt-4">
+        <div class="row justify-content-around mt-3">
+            <div class="col-4 shadow p-3 mb-5 bg-body rounded">
+                <h2>Self-View</h2>
+                <style>
+                    .mirror-video {                           /* Flip the display of the local user in self view*/
+                        -webkit-transform: rotateY(180deg);   /* Safari, Chrome */
+                        -moz-transform: rotateY(180deg);      /* Firefox */
+                        transform: rotateY(180deg);           /* Microsoft, etc. */
+                    }
+                </style>
+                <div id="self-view"> <!-- Container for the local participant media stream -->
+                    <p id="self-view-username"></p>
+                    <i class="display-1 bi bi-person-video position-relative"></i>
+                </div>
+
+                <button type="button" class="btn btn-dark" id="btn-join">Join</button>
+                <button type="button" class="btn btn-dark" id="btn-leave">Leave</button>
+            </div>
+            
+            <div class="col-4 shadow p-3 mb-5 bg-body rounded">
+                <h2>Remote-View</h2>
+                <div id="remote-view"> <!-- Container for the remote participant media stream -->
+                    <p id="remote-view-username"></p>
+                    <i class="display-1 bi bi-person-video position-relative"></i>
+                </div>
+
+                <button type="button" class="btn btn-dark" id="btn-invite"><i class="bi bi-clipboard2-plus-fill"></i> Invite</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container px-4 py-4 mt-3">
+        <p><a href="https://docs.dolby.io/communications-apis/docs/getting-started-with-the-javascript-sdk">Explore More Tutorials</a></p>
+    </div>
+
+    <!-- Prompt user for token and alias if not provided in URL -->
+    <div class="modal fade" id="token-prompt" tabindex="-1" aria-labelledby="token-prompt-label" aria-hidden="true">
+        <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+            <h5 class="modal-title" id="token-prompt-label">Dolby.io Dashboard</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <label for="input-token" class="form-label">Demo Client Access Token:</label>
+                <input id="input-token" type="text" class="form-control">
+            </div>
+            <div class="modal-footer">
+            <button type="button" id="btn-token" class="btn btn-primary">Authenticate</button>
+            </div>
+        </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
+
+    <!-- Dolby.io Starter Application -->
+    <script type="text/javascript">
+        /** 
+         * Start by initializing the Web SDK with an access token.  This starter project
+         * utilizes a helper function to pull the token from the query parameters in the URL.
+         */
+        const initializeToken = async () => {
+            console.group("Step 1 - Initialize the SDK");
+            const token = dolbyio.getAccessToken();
+            await VoxeetSDK.initializeToken(token, () => { console.log("Get a New Access Token"); });
+            console.log("Web SDK Initialized.");
+            console.groupEnd();
+
+            return token;
+        }
+
+        /**
+         * Start a session by establishing a communication link between this client application
+         * and the Dolby.io Platform.  You need to provide the client name when establishing
+         * a new session, often this is the name that will be used by the participant.  
+         */
+        const openSession = async (queryParams) => {
+            console.group("Step 2 - Open a Session");
+            const sessionName = queryParams.get('name') || 'developer';
+            console.log(`Session Name: ${sessionName}`);
+            await VoxeetSDK.session
+                .open({ name: sessionName })
+                .catch((error) => {
+                    console.error(error);
+                    console.log("Make sure you have a valid Dolby.io Token when initializing.");
+                });
+            console.log("Success: Session Opened.");
+            console.groupEnd();
+        }
+
+        /**
+         * Bi-directional communications for multiple participants occurs in a conference.  Initially, 
+         * the conference must be created before it can be joined.  The conference should be given a 
+         * unique and meaningful alias to help identify it among multiple conferences in an account.
+         * 
+         * This should be in response to a user event so that they may approve media access to the
+         * microphone and camera.
+         */
+        const createAndJoinConference = async (queryParams) => {
+            if (!VoxeetSDK.session.isOpen()) { await openSession(queryParams); };
+            console.group("Step 3 - Create and Join a Conference");
+            const conferenceAlias = queryParams.get('alias') || 'web-sdk-starter';
+            console.log(`Conference Alias: ${conferenceAlias}`);
+            const joinOptions = {
+                constraints: { audio: true, video: false }
+            };
+            const conferenceOptions = {
+                alias: conferenceAlias
+            }
+            await VoxeetSDK.conference.create(conferenceOptions)
+                .then((conference) => VoxeetSDK.conference.join(conference, joinOptions))
+                .catch((error) => console.error(error));
+            console.log("Success: Conference created and joined.")
+            console.groupEnd();
+        };
+
+        /**
+         * The SDK will trigger server-generated events which we can respond to
+         * for intended functionality.
+         */
+        const handleConferenceFlow = () => {
+
+            // Custom behavior for when there is a media stream added
+            VoxeetSDK.conference.on('streamAdded', (participant, stream) => {
+                console.log(`Stream Added for ${participant.info.name}`);
+                console.log(`  Type: ${stream.type}`);
+                console.log(`  Video Tracks: ${stream.getVideoTracks().length}`);
+
+                if (stream.type === 'Camera') {
+                    return shareVideo(participant, stream);
+                }
+            });
+
+            // Custom behavior for when there is a media stream updated which happens once an attendee starts sharing video
+            VoxeetSDK.conference.on('streamUpdated', (participant, stream) => {
+                console.log(`Stream Updated for ${participant.info.name}`);
+                console.log(`  Type: ${stream.type}`);
+                console.log(`  Video Tracks: ${stream.getVideoTracks().length}`);
+                if (stream.type === 'Camera' && stream.getVideoTracks().length) {
+                    return shareVideo(participant, stream);
+                }
+            });
+
+            // Custom behavior for when the app stops receiving a media stream for remote participants
+            VoxeetSDK.conference.on('streamRemoved', (participant, stream) => {
+                console.log(`Stream Removed for ${participant.info.name}`);
+                let videoNode = document.getElementById(`video-${participant.id}`);
+                if (videoNode) {
+                    videoNode.parentNode.removeChild(videoNode);
+                }
+            });
+
+            // Custom behavior for when everybody has left the conference
+            VoxeetSDK.conference.on("left", async () => {
+                await VoxeetSDK.session.close();
+                console.log('Session closed.');
+            });
+        }
+
+        /** 
+         * When the user decides to leave the conference you should stop sending the audio/video
+         * stream.
+         */
+        const leaveConference = async () => {
+            console.group("Final Step - Leave the Conference");
+            VoxeetSDK.conference
+                .leave()
+                .catch((error) => console.error(error));
+            console.log("Success: Left Conference.");
+            console.groupEnd();
+        }
+
+        /**
+         * When a new participant camera media stream is detected, we determine which
+         * part of the user interface to update and create a video element that will
+         * display the incoming stream.
+         */
+        const shareVideo = async (participant, stream) => {
+            console.group("Start and Share Video");            
+
+            let perspective = 'self-view';
+            if (VoxeetSDK.session.participant.id !== participant.id) {
+                console.log("Adding media stream for remote user.");
+                perspective = 'remote-view';
+            }
+
+            let videoNode = document.getElementById(`video-${participant.id}`);
+            if (!videoNode) {
+                console.log(`Creating a video node: video-${participant.id}`);
+                videoNode = document.createElement("video");
+
+                // If local user, start video and flip the orientation to mirror
+                if (VoxeetSDK.session.participant.id === participant.id) {
+                    console.log("Starting video stream for local user.");
+                    VoxeetSDK.conference
+                        .startVideo(VoxeetSDK.session.participant)
+                        .catch((error) => console.log(error));
+                    videoNode.classList.add("mirror-video");
+                }
+
+                videoNode.setAttribute("id", `video-${participant.id}`);
+                videoNode.setAttribute("height", "100%");
+                videoNode.setAttribute("width", "100%");
+                videoNode.setAttribute("autoplay", "autoplay");
+                const videoContainer = document.getElementById(perspective);
+                videoContainer.lastElementChild.replaceWith(videoNode);
+                videoContainer.firstElementChild.innerText = participant.info.name;
+            }
+
+            navigator.attachMediaStream(videoNode, stream);
+            console.log("Success: Video started");
+            console.groupEnd();
+        }
+
+        const main = async () => {
+            // Configure the application from query parameter values
+            const queryParams = new URLSearchParams(window.location.search);
+            let alias = queryParams.get('alias') || 'web-sdk-starter';
+
+            // Establish Real-time Communications by first initializing the Dolby.io Web SDK with credentials
+            let token = await initializeToken();
+
+            // Start a new session and connect to the Dolby.io platform establishing a client-server link
+            openSession(queryParams);
+
+            // When user clicks the Join button, start and join a conference for the given alias
+            document.getElementById('btn-join').onclick = async () => {
+                await createAndJoinConference(queryParams);
+            };
+
+            // Define custom behavior for activity that occurs during a video call
+            handleConferenceFlow();
+
+            // When user clicks the Invite button, generate a url to join the same conference
+            document.getElementById('btn-invite').onclick = async () => {
+                console.group('Step 4 - Invite a remote participant')
+                let url = `https://developer.dolby.io/demos/comms-sdk-web-getting-started/index.html?token=${token}&alias=${alias}&name=guest`;
+                console.log(`Invite a guest with URL: ${url}`);
+                document.getElementById('remote-view-username').innerText = 'Share the URL copied to your browser clipboard';
+                navigator.clipboard.writeText(url);
+                console.groupEnd();
+            }
+
+            // When user clicks the Leave button, end the conference
+            document.getElementById('btn-leave').onclick = async () => {
+                await leaveConference();
+                console.log("Getting Started Guide complete, congratulations!");
+            };
+        };
+
+        main();
+    </script>
 </body>
 </html>
