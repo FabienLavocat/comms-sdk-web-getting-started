@@ -41,7 +41,7 @@
                 <button type="button" class="btn btn-dark" id="btn-join">Join</button>
                 <button type="button" class="btn btn-dark" id="btn-leave">Leave</button>
             </div>
-            
+
             <div class="col-4 shadow p-3 mb-5 bg-body rounded">
                 <h2>Remote-View</h2>
                 <div id="remote-view"> <!-- Container for the remote participant media stream -->
@@ -99,7 +99,7 @@
         /**
          * Start a session by establishing a communication link between this client application
          * and the Dolby.io Platform.  You need to provide the client name when establishing
-         * a new session, often this is the name that will be used by the participant.  
+         * a new session, often this is the name that will be used by the participant.
          */
         const openSession = async (queryParams) => {
             console.group("Step 2 - Open a Session");
@@ -116,10 +116,10 @@
         }
 
         /**
-         * Bi-directional communications for multiple participants occurs in a conference.  Initially, 
-         * the conference must be created before it can be joined.  The conference should be given a 
+         * Bi-directional communications for multiple participants occurs in a conference.  Initially,
+         * the conference must be created before it can be joined.  The conference should be given a
          * unique and meaningful alias to help identify it among multiple conferences in an account.
-         * 
+         *
          * This should be in response to a user event so that they may approve media access to the
          * microphone and camera.
          */
@@ -168,20 +168,6 @@
                 }
             });
 
-            // Custom behavior for when the app stops receiving a media stream for remote participants
-            VoxeetSDK.conference.on('streamRemoved', (participant, stream) => {
-                console.log(`Stream Removed for ${participant.info.name}`);
-                let videoNode = document.getElementById(`video-${participant.id}`);
-                if (videoNode) {
-                    videoNode.parentNode.removeChild(videoNode);
-                }
-            });
-
-            // Custom behavior for when everybody has left the conference
-            VoxeetSDK.conference.on("left", async () => {
-                await VoxeetSDK.session.close();
-                console.log('Session closed.');
-            });
         }
 
         /**
@@ -227,24 +213,15 @@
             console.groupEnd();
         }
 
-        /**
-         * When the user decides to leave the conference you should stop sending the audio/video
-         * stream.
-         */
-        const leaveConference = async () => {
-            console.group("Final Step - Leave the Conference");
-            VoxeetSDK.conference
-                .leave()
-                .catch((error) => console.error(error));
-            console.log("Success: Left Conference.");
-            console.groupEnd();
-        }
 
+
+
+
+        // We'll be adding more functions here.
 
         const main = async () => {
             // Configure the application from query parameter values
             const queryParams = new URLSearchParams(window.location.search);
-            let alias = queryParams.get('alias') || 'web-sdk-starter';
 
             // Establish Real-time Communications by first initializing the Dolby.io Web SDK with credentials
             let token = await initializeToken();
@@ -260,21 +237,8 @@
             // Define custom behavior for activity that occurs during a video call
             handleConferenceFlow();
 
-            // When user clicks the Invite button, generate a url to join the same conference
-            document.getElementById('btn-invite').onclick = async () => {
-                console.group('Step 5 - Invite a remote participant')
-                let url = `https://developer.dolby.io/demos/comms-sdk-web-getting-started/index.html?token=${token}&alias=${alias}&name=guest`;
-                console.log(`Invite a guest with URL: ${url}`);
-                document.getElementById('remote-view-username').innerText = 'Share the URL copied to your browser clipboard';
-                navigator.clipboard.writeText(url);
-                console.groupEnd();
-            }
 
-            // When user clicks the Leave button, end the conference
-            document.getElementById('btn-leave').onclick = async () => {
-                await leaveConference();
-                console.log("Getting Started Guide complete, congratulations!");
-            };
+            // End of main()
         };
 
         main();

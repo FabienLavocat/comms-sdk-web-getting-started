@@ -26,13 +26,6 @@
         <div class="row justify-content-around mt-3">
             <div class="col-4 shadow p-3 mb-5 bg-body rounded">
                 <h2>Self-View</h2>
-                <style>
-                    .mirror-video {                           /* Flip the display of the local user in self view*/
-                        -webkit-transform: rotateY(180deg);   /* Safari, Chrome */
-                        -moz-transform: rotateY(180deg);      /* Firefox */
-                        transform: rotateY(180deg);           /* Microsoft, etc. */
-                    }
-                </style>
                 <div id="self-view"> <!-- Container for the local participant media stream -->
                     <p id="self-view-username"></p>
                     <i class="display-1 bi bi-person-video position-relative"></i>
@@ -41,7 +34,7 @@
                 <button type="button" class="btn btn-dark" id="btn-join">Join</button>
                 <button type="button" class="btn btn-dark" id="btn-leave">Leave</button>
             </div>
-            
+
             <div class="col-4 shadow p-3 mb-5 bg-body rounded">
                 <h2>Remote-View</h2>
                 <div id="remote-view"> <!-- Container for the remote participant media stream -->
@@ -99,7 +92,7 @@
         /**
          * Start a session by establishing a communication link between this client application
          * and the Dolby.io Platform.  You need to provide the client name when establishing
-         * a new session, often this is the name that will be used by the participant.  
+         * a new session, often this is the name that will be used by the participant.
          */
         const openSession = async (queryParams) => {
             console.group("Step 2 - Open a Session");
@@ -116,10 +109,10 @@
         }
 
         /**
-         * Bi-directional communications for multiple participants occurs in a conference.  Initially, 
-         * the conference must be created before it can be joined.  The conference should be given a 
+         * Bi-directional communications for multiple participants occurs in a conference.  Initially,
+         * the conference must be created before it can be joined.  The conference should be given a
          * unique and meaningful alias to help identify it among multiple conferences in an account.
-         * 
+         *
          * This should be in response to a user event so that they may approve media access to the
          * microphone and camera.
          */
@@ -141,110 +134,11 @@
             console.groupEnd();
         };
 
-        /**
-         * The SDK will trigger server-generated events which we can respond to
-         * for intended functionality.
-         */
-        const handleConferenceFlow = () => {
-
-            // Custom behavior for when there is a media stream added
-            VoxeetSDK.conference.on('streamAdded', (participant, stream) => {
-                console.log(`Stream Added for ${participant.info.name}`);
-                console.log(`  Type: ${stream.type}`);
-                console.log(`  Video Tracks: ${stream.getVideoTracks().length}`);
-
-                if (stream.type === 'Camera') {
-                    return shareVideo(participant, stream);
-                }
-            });
-
-            // Custom behavior for when there is a media stream updated which happens once an attendee starts sharing video
-            VoxeetSDK.conference.on('streamUpdated', (participant, stream) => {
-                console.log(`Stream Updated for ${participant.info.name}`);
-                console.log(`  Type: ${stream.type}`);
-                console.log(`  Video Tracks: ${stream.getVideoTracks().length}`);
-                if (stream.type === 'Camera' && stream.getVideoTracks().length) {
-                    return shareVideo(participant, stream);
-                }
-            });
-
-            // Custom behavior for when the app stops receiving a media stream for remote participants
-            VoxeetSDK.conference.on('streamRemoved', (participant, stream) => {
-                console.log(`Stream Removed for ${participant.info.name}`);
-                let videoNode = document.getElementById(`video-${participant.id}`);
-                if (videoNode) {
-                    videoNode.parentNode.removeChild(videoNode);
-                }
-            });
-
-            // Custom behavior for when everybody has left the conference
-            VoxeetSDK.conference.on("left", async () => {
-                await VoxeetSDK.session.close();
-                console.log('Session closed.');
-            });
-        }
-
-        /**
-         * When a new participant camera media stream is detected, we determine which
-         * part of the user interface to update and create a video element that will
-         * display the incoming stream.
-         */
-        const shareVideo = async (participant, stream) => {
-            console.group("Step 4 - Start and Share Video");
-
-            let perspective = 'self-view';
-            if (VoxeetSDK.session.participant.id !== participant.id) {
-                console.log("Adding media stream for remote user.");
-                perspective = 'remote-view';
-            }
-
-            let videoNode = document.getElementById(`video-${participant.id}`);
-            if (!videoNode) {
-                console.log(`Creating a video node: video-${participant.id}`);
-                videoNode = document.createElement("video");
-
-                // If local user, start video and flip the orientation to mirror
-                if (VoxeetSDK.session.participant.id === participant.id) {
-                    console.log("Starting video stream for local user.");
-                    VoxeetSDK.conference
-                        .startVideo(VoxeetSDK.session.participant)
-                        .catch((error) => console.log(error));
-                    videoNode.classList.add("mirror-video");
-                }
-
-                videoNode.setAttribute("id", `video-${participant.id}`);
-                videoNode.setAttribute("height", "100%");
-                videoNode.setAttribute("width", "100%");
-                videoNode.setAttribute("autoplay", "autoplay");
-                videoNode.setAttribute("playsinline", true);
-                const videoContainer = document.getElementById(perspective);
-                videoContainer.lastElementChild.replaceWith(videoNode);
-                videoContainer.firstElementChild.innerText = participant.info.name;
-            }
-
-            navigator.attachMediaStream(videoNode, stream);
-            console.log("Success: Video started");
-            console.groupEnd();
-        }
-
-        /**
-         * When the user decides to leave the conference you should stop sending the audio/video
-         * stream.
-         */
-        const leaveConference = async () => {
-            console.group("Final Step - Leave the Conference");
-            VoxeetSDK.conference
-                .leave()
-                .catch((error) => console.error(error));
-            console.log("Success: Left Conference.");
-            console.groupEnd();
-        }
-
+        // We'll be adding more functions here.
 
         const main = async () => {
             // Configure the application from query parameter values
             const queryParams = new URLSearchParams(window.location.search);
-            let alias = queryParams.get('alias') || 'web-sdk-starter';
 
             // Establish Real-time Communications by first initializing the Dolby.io Web SDK with credentials
             let token = await initializeToken();
@@ -257,24 +151,8 @@
                 await createAndJoinConference(queryParams);
             };
 
-            // Define custom behavior for activity that occurs during a video call
-            handleConferenceFlow();
 
-            // When user clicks the Invite button, generate a url to join the same conference
-            document.getElementById('btn-invite').onclick = async () => {
-                console.group('Step 5 - Invite a remote participant')
-                let url = `https://developer.dolby.io/demos/comms-sdk-web-getting-started/index.html?token=${token}&alias=${alias}&name=guest`;
-                console.log(`Invite a guest with URL: ${url}`);
-                document.getElementById('remote-view-username').innerText = 'Share the URL copied to your browser clipboard';
-                navigator.clipboard.writeText(url);
-                console.groupEnd();
-            }
-
-            // When user clicks the Leave button, end the conference
-            document.getElementById('btn-leave').onclick = async () => {
-                await leaveConference();
-                console.log("Getting Started Guide complete, congratulations!");
-            };
+            // End of main()
         };
 
         main();
