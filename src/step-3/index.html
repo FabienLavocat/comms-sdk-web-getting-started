@@ -26,6 +26,7 @@
         <div class="row justify-content-around mt-3">
             <div class="col-4 shadow p-3 mb-5 bg-body rounded">
                 <h2>Self-View</h2>
+                <!-- Step 4: Mirror Video Effect: Place Here -->
                 <div id="self-view"> <!-- Container for the local participant media stream -->
                     <p id="self-view-username"></p>
                     <i class="display-1 bi bi-person-video position-relative"></i>
@@ -134,7 +135,11 @@
             console.groupEnd();
         };
 
-        // We'll be adding more functions here.
+        // Step 4: Define handleConferenceFlow() Here
+
+        // Step 4: Define shareVideo() Here
+
+        // Step 5: Define leaveConference() Here
 
         const main = async () => {
             // Configure the application from query parameter values
@@ -151,8 +156,11 @@
                 await createAndJoinConference(queryParams);
             };
 
+            // Step 4: Call handleConferenceFlow() Here
 
-            // End of main()
+            // Step 5: Call leaveConference() Here
+
+            // Step 6: Create Invite link Here
         };
 
         main();
