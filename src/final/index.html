@@ -27,7 +27,7 @@
             <div class="col-4 shadow p-3 mb-5 bg-body rounded">
                 <h2>Self-View</h2>
                 <style>
-                    .mirror-video {                           /* Flip the display of the local user in self view*/
+                    #self-view video {                        /* Flip the display of the local user in self view */
                         -webkit-transform: rotateY(180deg);   /* Safari, Chrome */
                         -moz-transform: rotateY(180deg);      /* Firefox */
                         transform: rotateY(180deg);           /* Microsoft, etc. */
@@ -86,10 +86,10 @@
          * Start by initializing the Web SDK with an access token.  This starter project
          * utilizes a helper function to pull the token from the query parameters in the URL.
          */
-        const initializeToken = async () => {
+        const initializeToken = () => {
             console.group("Step 1 - Initialize the SDK");
             const token = dolbyio.getAccessToken();
-            await VoxeetSDK.initializeToken(token, () => { console.log("Get a New Access Token"); });
+            VoxeetSDK.initializeToken(token, () => { console.log("Get a New Access Token"); });
             console.log("Web SDK Initialized.");
             console.groupEnd();
 
@@ -105,13 +105,13 @@
             console.group("Step 2 - Open a Session");
             const sessionName = queryParams.get('name') || 'developer';
             console.log(`Session Name: ${sessionName}`);
-            await VoxeetSDK.session
-                .open({ name: sessionName })
-                .catch((error) => {
-                    console.error(error);
-                    console.log("Make sure you have a valid Dolby.io Token when initializing.");
-                });
-            console.log("Success: Session Opened.");
+            try {
+                await VoxeetSDK.session.open({ name: sessionName });
+                console.log("Success: Session Opened.");
+            } catch (error) {
+                console.error(error);
+                console.log("Make sure you have a valid Dolby.io Token when initializing.");
+            }
             console.groupEnd();
         }
 
@@ -134,10 +134,13 @@
             const conferenceOptions = {
                 alias: conferenceAlias
             }
-            await VoxeetSDK.conference.create(conferenceOptions)
-                .then((conference) => VoxeetSDK.conference.join(conference, joinOptions))
-                .catch((error) => console.error(error));
-            console.log("Success: Conference created and joined.")
+            try {
+                const conference = await VoxeetSDK.conference.create(conferenceOptions);
+                await VoxeetSDK.conference.join(conference, joinOptions);
+                console.log("Success: Conference created and joined.");
+            } catch (error) {
+                console.error(error);
+            }
             console.groupEnd();
         };
 
@@ -154,7 +157,7 @@
                 console.log(`  Video Tracks: ${stream.getVideoTracks().length}`);
 
                 if (stream.type === 'Camera') {
-                    return shareVideo(participant, stream);
+                    shareVideo(participant, stream);
                 }
             });
 
@@ -164,20 +167,20 @@
                 console.log(`  Type: ${stream.type}`);
                 console.log(`  Video Tracks: ${stream.getVideoTracks().length}`);
                 if (stream.type === 'Camera' && stream.getVideoTracks().length) {
-                    return shareVideo(participant, stream);
+                    shareVideo(participant, stream);
                 }
             });
 
             // Custom behavior for when the app stops receiving a media stream for remote participants
             VoxeetSDK.conference.on('streamRemoved', (participant, stream) => {
                 console.log(`Stream Removed for ${participant.info.name}`);
-                let videoNode = document.getElementById(`video-${participant.id}`);
+                const videoNode = document.getElementById(`video-${participant.id}`);
                 if (videoNode) {
                     videoNode.parentNode.removeChild(videoNode);
                 }
             });
 
-            // Custom behavior for when everybody has left the conference
+            // Custom behavior for when the participant has left the conference
             VoxeetSDK.conference.on("left", async () => {
                 await VoxeetSDK.session.close();
                 console.log('Session closed.');
@@ -189,7 +192,7 @@
          * part of the user interface to update and create a video element that will
          * display the incoming stream.
          */
-        const shareVideo = async (participant, stream) => {
+        const shareVideo = (participant, stream) => {
             console.group("Step 4 - Start and Share Video");
 
             let perspective = 'self-view';
@@ -203,20 +206,13 @@
                 console.log(`Creating a video node: video-${participant.id}`);
                 videoNode = document.createElement("video");
 
-                // If local user, start video and flip the orientation to mirror
-                if (VoxeetSDK.session.participant.id === participant.id) {
-                    console.log("Starting video stream for local user.");
-                    VoxeetSDK.conference
-                        .startVideo(VoxeetSDK.session.participant)
-                        .catch((error) => console.log(error));
-                    videoNode.classList.add("mirror-video");
-                }
-
                 videoNode.setAttribute("id", `video-${participant.id}`);
                 videoNode.setAttribute("height", "100%");
                 videoNode.setAttribute("width", "100%");
                 videoNode.setAttribute("autoplay", "autoplay");
                 videoNode.setAttribute("playsinline", true);
+                videoNode.muted = true;
+
                 const videoContainer = document.getElementById(perspective);
                 videoContainer.lastElementChild.replaceWith(videoNode);
                 videoContainer.firstElementChild.innerText = participant.info.name;
@@ -233,10 +229,12 @@
          */
         const leaveConference = async () => {
             console.group("Final Step - Leave the Conference");
-            VoxeetSDK.conference
-                .leave()
-                .catch((error) => console.error(error));
-            console.log("Success: Left Conference.");
+            try {
+                await VoxeetSDK.conference.leave();
+                console.log("Success: Left Conference.");
+            } catch (error) {
+                console.error(error);
+            }
             console.groupEnd();
         }
 
@@ -244,13 +242,13 @@
         const main = async () => {
             // Configure the application from query parameter values
             const queryParams = new URLSearchParams(window.location.search);
-            let alias = queryParams.get('alias') || 'web-sdk-starter';
+            const alias = queryParams.get('alias') || 'web-sdk-starter';
 
             // Establish Real-time Communications by first initializing the Dolby.io Web SDK with credentials
-            let token = await initializeToken();
+            const token = await initializeToken();
 
             // Start a new session and connect to the Dolby.io platform establishing a client-server link
-            openSession(queryParams);
+            await openSession(queryParams);
 
             // When user clicks the Join button, start and join a conference for the given alias
             document.getElementById('btn-join').onclick = async () => {
