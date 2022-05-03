@@ -129,7 +129,7 @@
             const conferenceAlias = queryParams.get('alias') || 'web-sdk-starter';
             console.log(`Conference Alias: ${conferenceAlias}`);
             const joinOptions = {
-                constraints: { audio: true, video: false }
+                constraints: { audio: true, video: true }
             };
             const conferenceOptions = {
                 alias: conferenceAlias
